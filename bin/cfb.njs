@@ -143,14 +143,16 @@ if(program.create || program.append) {
 		if(fs.lstatSync(x).isDirectory()) {
 			for (const file of walkSync(x)) {
 				logit("append", file);
-				X.utils.cfb_add(cfb, "/" + file, fs.readFileSync(file));
+				X.utils.cfb_add(cfb, "/" + file, fs.readFileSync(file), {unsafe:true});
 			}
 		}
 		else{
 			logit("append", x);
-			X.utils.cfb_add(cfb, "/" + x, fs.readFileSync(x));
+			X.utils.cfb_add(cfb, "/" + x, fs.readFileSync(x), {unsafe:true});
 		}	
 	});
+
+	X.utils.cfb_gc(cfb);
 	X.writeFile(cfb, program.args[0]);
 	exit(0);
 }
