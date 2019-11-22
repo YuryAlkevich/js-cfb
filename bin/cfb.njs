@@ -5,6 +5,7 @@
 var n = "cfb";
 var X = require('../');
 var fs = require('fs');
+var path = require('path');
 var program = require('commander');
 var PRINTJ = require("printj");
 var sprintf = PRINTJ.sprintf;
@@ -122,10 +123,33 @@ function write(path/*:string*/, data/*:CFBEntry*/) {
 	fs.writeFileSync(path, /*::new Buffer((*/data.content/*:: :any))*/ || new Buffer(0));
 }
 
+function *walkSync(dir) {
+    const files = fs.readdirSync(dir);
+
+    for (const file of files) {
+        const pathToFile = path.join(dir, file);
+        const isDirectory = fs.statSync(pathToFile).isDirectory();
+        if (isDirectory) {
+            yield *walkSync(pathToFile);
+        } else {
+            yield pathToFile;
+        }
+    }
+}
+
 if(program.create || program.append) {
 	program.args.slice(1).forEach(function(x/*:string*/) {
-		logit("append", x);
-		X.utils.cfb_add(cfb, "/" + x, fs.readFileSync(x));
+
+		if(fs.lstatSync(x).isDirectory()) {
+			for (const file of walkSync(x)) {
+				logit("append", file);
+				X.utils.cfb_add(cfb, "/" + file, fs.readFileSync(file));
+			}
+		}
+		else{
+			logit("append", x);
+			X.utils.cfb_add(cfb, "/" + x, fs.readFileSync(x));
+		}	
 	});
 	X.writeFile(cfb, program.args[0]);
 	exit(0);
